@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import <GooglePlus/GooglePlus.h>
 
 @interface AppDelegate ()
 
@@ -42,6 +43,15 @@
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     // Saves changes in the application's managed object context before the application terminates.
     [self saveContext];
+}
+
+- (BOOL)application: (UIApplication *)application
+            openURL: (NSURL *)url
+  sourceApplication: (NSString *)sourceApplication
+         annotation: (id)annotation {
+    return [GPPURLHandler handleURL:url
+                  sourceApplication:sourceApplication
+                         annotation:annotation];
 }
 
 #pragma mark - Core Data stack
