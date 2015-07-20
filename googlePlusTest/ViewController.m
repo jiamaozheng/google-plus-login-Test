@@ -9,10 +9,14 @@
 #import "ViewController.h"
 #import <GoogleOpenSource/GoogleOpenSource.h>
 #import <GooglePlus/GooglePlus.h>
+#import "AppDelegate.h"
 
 static NSString * const kClientId = @"641220392338-27462i9hgc2r473lul9qvsahc8vs7upm.apps.googleusercontent.com";
 
 @interface ViewController ()
+
+@property (strong, nonatomic) GPPSignIn *signIn;
+@property (strong, nonatomic) AppDelegate *appDelegate;
 
 @end
 
@@ -33,19 +37,19 @@ static NSString * const kClientId = @"641220392338-27462i9hgc2r473lul9qvsahc8vs7
 }
 
 - (void)signInGoogle: (UIButton *) sender {
-    GPPSignIn *signIn = [GPPSignIn sharedInstance];
-    signIn.shouldFetchGooglePlusUser = YES;
-    signIn.shouldFetchGoogleUserEmail = YES;  // Uncomment to get the user's email
+    self.signIn = [GPPSignIn sharedInstance];
+    self.signIn.shouldFetchGooglePlusUser = YES;
+    self.signIn.shouldFetchGoogleUserEmail = YES;  // Uncomment to get the user's email
     
     // You previously set kClientId in the "Initialize the Google+ client" step
-    signIn.clientID = kClientId;
+    self.signIn.clientID = kClientId;
     
     // Uncomment one of these two statements for the scope you chose in the previous step
-    signIn.scopes = @[ kGTLAuthScopePlusLogin ];  // "https://www.googleapis.com/auth/plus.login" scope
+    self.signIn.scopes = @[ kGTLAuthScopePlusLogin ];  // "https://www.googleapis.com/auth/plus.login" scope
     //signIn.scopes = @[ @"profile" ];            // "profile" scope
     
     // Optional: declare signIn.actions, see "app activities"
-    signIn.delegate = self;
+    self.signIn.delegate = self;
           [[GPPSignIn sharedInstance] authenticate];
     //
     //     [GPPSignInButton class];
@@ -79,6 +83,8 @@ static NSString * const kClientId = @"641220392338-27462i9hgc2r473lul9qvsahc8vs7
         // Do some error handling here.
     } else {
         [self refreshInterfaceBasedOnSignIn];
+        NSLog(@"%@", self.signIn.authentication.userEmail);
+        [self retrivevProfileInfo];
     }
 }
 
@@ -130,5 +136,42 @@ static NSString * const kClientId = @"641220392338-27462i9hgc2r473lul9qvsahc8vs7
 }
 
 - (IBAction)googleDisconnected:(id)sender {
+}
+
+- (void)retrivevProfileInfo{
+    // 1. Create a |GTLServicePlus| instance to send a request to Google+.
+    GTLServicePlus* plusService = [[GTLServicePlus alloc] init] ;
+    plusService.retryEnabled = YES;
+    
+    // 2. Set a valid |GTMOAuth2Authentication| object as the authorizer.
+    [plusService setAuthorizer:[GPPSignIn sharedInstance].authentication];
+    
+    
+    GTLQueryPlus *query = [GTLQueryPlus queryForPeopleGetWithUserId:@"me"];
+   
+    [plusService executeQuery:query
+            completionHandler:^(GTLServiceTicket *ticket,
+                                GTLPlusPerson *person,
+                                NSError *error) {
+                if (error) {
+                    GTMLoggerError(@"Error: %@", error);
+                } else {
+                    // Retrieve the display name and "about me" text
+                    NSString *description = [NSString stringWithFormat:
+                                             @"%@\n%@", person.displayName,
+                                             person.aboutMe];
+                     NSLog(@"description:= %@",description);
+                     NSLog(@"Email= %@",[GPPSignIn sharedInstance].authentication.userEmail);
+                     NSLog(@"GoogleID=%@",person.identifier);
+                     NSLog(@"User Name=%@",[person.name.givenName stringByAppendingFormat:@" %@",person.name.familyName]);
+                     NSLog(@"Gender=%@",person.gender);
+                     NSLog(@"birthday=%@",person.birthday);
+                     NSLog(@"imageURL=%@",person.image);
+                     NSLog(@"JSON=%@",person.JSON);
+                     NSLog(@"Language=%@",person.language);
+                }
+            }];
+    
+    
 }
 @end
